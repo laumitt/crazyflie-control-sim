@@ -5,7 +5,7 @@ class Controller1D():
 
     You are to implement the "compute_commands" method.
     """
-    def __init__(self, cfparams, pid_gains):
+    def __init__(self, cfparams, pid_gains, dt):
         """
         Inputs:
         - cfparams (CrazyflieParams dataclass):     model parameter class for the crazyflie
@@ -18,6 +18,13 @@ class Controller1D():
         self.ki_z = pid_gains.ki
         self.kd_z = pid_gains.kd
 
+        self.dt = dt
+
+        # intialize pid components
+        self.proportional = 0
+        self.integral = 0
+        self.derivative = 0
+
     def compute_commands(self, setpoint, state):
         """
         Inputs:
@@ -28,7 +35,18 @@ class Controller1D():
         - U (float): total upward thrust
         """
         U = 0
+        z_acc_des = 0
 
-        # your code here
+        # compute errors
+        error = setpoint.z_pos - state.z_pos
+        error_dot = setpoint.z_vel - state.z_vel
+
+        self.proportional = self.kp_z*error
+        self.integral += self.ki_z*error*self.dt
+        self.derivative = self.kd_z*error_dot
+
+        # zcc = z_acc_des + self.kd_z*(setpoint.z_vel - state.z_vel) + self.kp_z*(setpoint.z_pos - state.z_pos)
+        zcc = z_acc_des + self.proportional + self.integral + self.derivative
+        U = self.params.mass*(self.params.g + zcc)
 
         return U
